@@ -8,7 +8,7 @@ CurrentMusic 的完整开源仓库：Python 后端、Web 播放器、Android Web
 - [Android Releases](https://github.com/backrooms-yrc/CurrentMusic/releases) · [更新日志](CHANGELOG.md)
 - [后端部署](backend/README.md) · [Windows 客户端](windows/README.md) · [贡献指南](CONTRIBUTING.md)
 
-公开库保留原前端壳的提交、标签与 Releases；后端和其他组件以经过审查的源码快照加入。历史私有仓库继续保密，不合并其 Git 历史。运行数据、账号 cookie、服务凭据与官方签名密钥不随代码分发。
+公开库保留原前端壳的提交、标签与 Releases；后端和其他组件以经过审查的源码快照加入。历史私有仓库继续保密，不合并其 Git 历史。运行数据、密钥、账号凭据和生产环境文件不属于源码。
 
 ## 目录
 
@@ -36,13 +36,13 @@ cp deploy/backend.env.example data/backend.env
 # 在初始化和启动之前加载同一份配置。
 set -a; . data/backend.env; set +a
 python3 backend/manage.py init-db
-python3 backend/manage.py create-owner admin --nickname 管理员
+python3 backend/manage.py create-owner admin --nickname Administrator
 python3 backend/cm_server.py
 ```
 
-后端默认监听 `127.0.0.1:3010`；`GET /health` 可检查存活。创建站长时未提供密码会生成随机密码并仅显示一次。生产部署、外部服务和反向代理配置见 [backend/README.md](backend/README.md) 与 [deploy/README.md](deploy/README.md)。
+后端默认监听 `127.0.0.1:3010`；`GET /health` 可检查存活。创建站长时未提供密码会生成随机密码并仅显示一次。生产部署、外部服务和反向代理配置见 [backend deployment guide](backend/README.md)。
 
-网易云 API 是独立部署的上游服务，通过 `CM_NCM_BASE` 指定；它的源码和登录 cookie 不包含在本仓库。AI、SMTP、SMS、分享图与 LDDC 均按需配置；没有相应配置时对应能力不可用或降级。账号、歌单等本地能力不依赖这些服务。
+网易云 API 是独立部署的上游服务，通过 `CM_NCM_BASE` 指定；它的源码和登录 cookie 不包含在本仓库。AI、SMTP、SMS、分享图与 LDDC 均按需配置；没有相应服务时对应功能会明确降级或不可用。
 
 ## Web 与 Android
 
@@ -60,7 +60,7 @@ export ANDROID_HOME=/path/to/android-sdk
 bash build.sh
 ```
 
-前端产物位于 `app/src/main/assets/www/`；APK 位于 `dist/`。首次 Android 构建会创建本地自签名密钥；自行签名的安装包无法覆盖官方签名版本。签名密码通过 `CM_KS_PASS` 配置，不要提交密钥。Android 最低版本为 7.0（API 24）。客户端可在设置中切换服务器。
+前端产物位于 `app/src/main/assets/www/`；APK 位于 `dist/`。首次 Android 构建会创建本地自签名密钥；自行签名的安装包无法覆盖官方签名版本。签名密码通过环境变量配置，勿提交密钥或 APK。
 
 ## 官网与文档
 
@@ -73,21 +73,25 @@ npm --prefix api-docs run build
 npm --prefix api-docs run publish
 ```
 
-如需完整上游参数摘录，构建文档时设置 `NCM_API_DIR` 指向独立的 api-enhanced 源码目录。缺失上游源码时仍生成自有接口、权限登记与专题，明确标注上游资料未附带。见 [文档构建说明](api-docs/README.md)。
+如需完整上游参数摘录，构建文档时设置 `NCM_API_DIR` 指向独立的 api-enhanced 源码目录。缺失上游源码时仍生成自有接口、权限登记与专题，并明确标注未收录部分。
 
-## 验证与安全
+## Audio quality
+
+Playback requests the quality tier that the provider makes available; the EQ changes playback and does not create a mastered file. FLAC conversion or upsampling cannot restore quality missing from a lossy source. See [Audio quality and mastering boundaries](docs/audio-quality-and-mastering.md) for the current implementation status and requirements for a future, user-controlled local-file workflow.
+
+## Verification and security
 
 ```bash
-tools/run-tests.sh                  # 强制使用临时数据库与数据目录
+tools/run-tests.sh                  # Forces a temporary database and data directory
 python3 tools/test-api-docs.py
 python3 tools/test-open-source.py
-python3 tools/check-open-source.py   # 检查所有已跟踪文件；只报告位置，不打印密钥
+python3 tools/check-open-source.py   # Scans tracked files; reports locations, never secret values
 ```
 
-贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题见 [SECURITY.md](SECURITY.md)，公开边界与迁移记录见 [开源清单](docs/open-source-checklist.md)。媒体与账号写操作的 RealIP 传递方式见 [docs/realip.md](docs/realip.md)。
+See the [contribution guide](CONTRIBUTING.md), [security policy](SECURITY.md), and [open-source checklist](docs/open-source-checklist.md). Media and account write operations are subject to provider terms and applicable laws.
 
-## 许可与第三方资源
+## License and third-party resources
 
-项目自有代码使用 [MIT](LICENSE)。依赖、图标字体、上游文档与可选服务保留各自许可，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。LDDC 独立安装并通过本机 HTTP 连接，不包含其源码。挂件目录只提供元数据；第三方图片、音乐、用户头像与其他服务内容不属于 MIT 授权范围。
+Project-owned code is licensed under [MIT](LICENSE). Dependencies, icons, fonts, upstream documentation, and optional services retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). LDDC is installed and run separately; see its license and source notices before distributing it.
 
-CurrentMusicX 由社区开发者在 [bileizhen/CurrentMusicX](https://github.com/bileizhen/CurrentMusicX) 独立维护，其仓库与发布流程保持独立。
+CurrentMusicX is independently maintained by community developers at [bileizhen/CurrentMusicX](https://github.com/bileizhen/CurrentMusicX); its repository and release process remain separate.
